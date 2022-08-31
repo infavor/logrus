@@ -15,8 +15,11 @@ import (
 
 const (
 	red    = 31
+	green  = 32
 	yellow = 33
-	blue   = 36
+	blue   = 34
+	mage   = 35
+	cyan   = 36
 	gray   = 37
 )
 
@@ -230,19 +233,19 @@ func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 }
 
 func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []string, data Fields, timestampFormat string) {
-	var levelColor int
-	switch entry.Level {
-	case DebugLevel, TraceLevel:
-		levelColor = gray
-	case WarnLevel:
-		levelColor = yellow
-	case ErrorLevel, FatalLevel, PanicLevel:
-		levelColor = red
-	case InfoLevel:
-		levelColor = blue
-	default:
-		levelColor = blue
-	}
+	// var levelColor int
+	// switch entry.Level {
+	// case DebugLevel, TraceLevel:
+	// 	levelColor = gray
+	// case WarnLevel:
+	// 	levelColor = yellow
+	// case ErrorLevel, FatalLevel, PanicLevel:
+	// 	levelColor = red
+	// case InfoLevel:
+	// 	levelColor = blue
+	// default:
+	// 	levelColor = blue
+	// }
 
 	levelText := strings.ToUpper(entry.Level.String())
 	if !f.DisableLevelTruncation && !f.PadLevelText {
@@ -282,15 +285,19 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 
 	switch {
 	case f.DisableTimestamp:
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m%s %-44s ", levelColor, levelText, caller, entry.Message)
-	case !f.FullTimestamp:
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d]%s %-44s ", levelColor, levelText, int(entry.Time.Sub(baseTimestamp)/time.Second), caller, entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s \x1b[%dm%s \x1b[%dm%-44s\x1b[0m ", blue,
+			levelText, mage, caller, green, entry.
+				Message)
+	// case !f.FullTimestamp:
+	// 	fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d]%s %-44s ", levelColor, levelText, int(entry.Time.Sub(baseTimestamp)/time.Second), caller, entry.Message)
 	default:
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s]%s %-44s ", levelColor, levelText, entry.Time.Format(timestampFormat), caller, entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s \x1b[0m[ \x1b[%dm%s \x1b[0m] \x1b[%dm%s \x1b[%dm%-44s\x1b[0m ", blue,
+			levelText, yellow, entry.Time.Format(timestampFormat), mage, caller, green, entry.
+				Message)
 	}
 	for _, k := range keys {
 		v := data[k]
-		fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", levelColor, k)
+		fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", cyan, k)
 		f.appendValue(b, v)
 	}
 }
@@ -331,9 +338,13 @@ func (f *TextFormatter) appendValue(b *bytes.Buffer, value interface{}) {
 		stringVal = fmt.Sprint(value)
 	}
 
-	if !f.needsQuoting(stringVal) {
-		b.WriteString(stringVal)
-	} else {
-		b.WriteString(fmt.Sprintf("%q", stringVal))
-	}
+	stringVal = fmt.Sprintf("\x1b[%dm%s\x1b[0m", yellow, stringVal)
+
+	// if !f.needsQuoting(stringVal) {
+	// 	b.WriteString(stringVal)
+	// } else {
+	// 	b.WriteString(fmt.Sprintf("%q", stringVal))
+	// }
+
+	b.WriteString(stringVal)
 }
